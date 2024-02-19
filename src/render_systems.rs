@@ -1,5 +1,5 @@
 use crate::{
-    egui_node::{EguiNode, EguiPipeline, EguiPipelineKey},
+    egui_node::{EguiNode, EguiNodeLabel, EguiPipeline, EguiPipelineKey},
     EguiManagedTextures, EguiSettings, EguiUserTextures, WindowSize,
 };
 use bevy::{
@@ -78,15 +78,18 @@ pub fn setup_new_windows_render_system(
     mut render_graph: ResMut<RenderGraph>,
 ) {
     for window in windows.iter() {
-        let egui_pass = format!("egui-{}-{}", window.index(), window.generation());
+        let egui_pass = EguiNodeLabel {
+            index: window.index(),
+            generation: window.generation()
+        };
 
         let new_node = EguiNode::new(window);
 
         render_graph.add_node(egui_pass.clone(), new_node);
 
         render_graph.add_node_edge(
-            bevy::render::main_graph::node::CAMERA_DRIVER,
-            egui_pass.to_string(),
+            bevy::render::graph::CameraDriverLabel,
+            egui_pass,
         );
     }
 }
@@ -140,7 +143,7 @@ pub fn prepare_egui_transforms_system(
     egui_transforms.offsets.clear();
 
     for (window, size) in window_sizes.iter() {
-        let offset = egui_transforms.buffer.push(EguiTransform::from_window_size(
+        let offset = egui_transforms.buffer.push(&EguiTransform::from_window_size(
             *size,
             egui_settings.scale_factor as f32,
         ));
